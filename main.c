@@ -2,6 +2,7 @@
 
 #include <SDL2/SDL.h> 
 #include <stdio.h>
+#include <stdlib.h>
 #include <SDL_image.h>
 #include <SDL_mixer.h>
 
@@ -93,6 +94,11 @@ int main(int argc, char* argv[]) {
 
     Mix_Chunk* jump = Mix_LoadWAV("/assets/jump.mp3");
 
+    SDL_Rect topOb;
+    topOb.x = 400;
+
+    int obstacle = rand() % 100;
+
     while(gameIsRunning) {
         Uint32 frameStart = SDL_GetTicks();
         
@@ -109,7 +115,7 @@ int main(int argc, char* argv[]) {
                 switch (event.key.keysym.sym) {
                     case SDLK_UP:
                     inputMap[0] = true;
-                    Mix_PlayChannel(-1, jump, 0);
+                    // Mix_PlayChannel(-1, jump, 0);
                     playerVelocity = 30;
                     break;
             }
@@ -130,6 +136,23 @@ int main(int argc, char* argv[]) {
             playerY = 200;
             playerVelocity = 4;
         }
+        if (topOb.x > -75) {
+            topOb.x -= 5;
+        } else {
+            topOb.x = 400;
+            obstacle = rand() % 350;
+        }
+        topOb.y = obstacle;
+        topOb.w = 75;
+        topOb.h = 75;
+
+        if ((playerY > obstacle && playerY < obstacle+75) && (topOb.x < 50 && topOb.x+75 > 50)) {
+            playerY = 200;
+            playerVelocity = 4;
+            topOb.x = 500;
+            obstacle = rand() % 350;
+        }
+
 
         SDL_SetRenderDrawColor(renderer,0,0,0,SDL_ALPHA_OPAQUE);
         SDL_RenderClear(renderer);
@@ -138,12 +161,15 @@ int main(int argc, char* argv[]) {
 
         SDL_RenderFillCircle(renderer,50,playerY,15);
 
+        // Draw the obstacle!!
+        SDL_SetRenderDrawColor(renderer,clamp(rand()%255,150,255),clamp(rand()%255,150,255),clamp(rand()%255,150,255),SDL_ALPHA_OPAQUE);
+        SDL_RenderFillRect(renderer,&topOb);
+
         SDL_RenderPresent(renderer);
 
         Uint32 frameTime = SDL_GetTicks() - frameStart;
         if (FRAME_TARGET_TIME > frameTime) {
         SDL_Delay(FRAME_TARGET_TIME - frameTime);
-        
         }
     }
     SDL_DestroyWindow(window);
