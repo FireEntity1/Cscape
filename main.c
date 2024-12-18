@@ -92,6 +92,7 @@ int main(int argc, char* argv[]) {
     bool inputMap[2] = {false,false}; // Tap,Esc
 
     Mix_Chunk* jump = Mix_LoadWAV("/assets/jump.mp3");
+    Mix_Chunk* soundtrack = Mix_LoadWAV("/assets/soundtrack.wav");
 
     SDL_Rect topOb;
     topOb.x = 400;
@@ -104,7 +105,11 @@ int main(int argc, char* argv[]) {
 
     int points = 0;
 
-    int linePos[10];
+
+    int amtLines = 50;
+    int linePos[amtLines];
+
+    Mix_PlayChannel(-1, soundtrack, -1);
 
     while(gameIsRunning) {
         Uint32 frameStart = SDL_GetTicks();
@@ -115,6 +120,7 @@ int main(int argc, char* argv[]) {
         currentFrameTime = SDL_GetTicks();
         deltaTime = currentFrameTime - lastFrameTime;
 
+        // check events
         while(SDL_PollEvent(&event)) {
             if(event.type == SDL_QUIT){
                 gameIsRunning= false;
@@ -135,6 +141,7 @@ int main(int argc, char* argv[]) {
             }
         }
         }
+
         // handle gravity
         playerVelocity -= 1;
         playerY -= playerVelocity/4;
@@ -142,11 +149,15 @@ int main(int argc, char* argv[]) {
         // handle speed change
         obSpeed = round((points+50)/10);
         
+        // handle hitboxes
         if (!(0 < playerY && playerY < 400)) {
             playerY = 200;
             playerVelocity = 4;
             topOb.x = 500;
             obstacle = rand() % 350;
+            points = 0;
+            Mix_HaltChannel(-1);
+            Mix_PlayChannel(-1, soundtrack, -1);
         }
         if (topOb.x > -75) {
             topOb.x -= obSpeed;
@@ -159,13 +170,14 @@ int main(int argc, char* argv[]) {
         topOb.w = 75;
         topOb.h = 75;
 
-        // reset on hit
         if ((playerY > obstacle && playerY < obstacle+75) && (topOb.x < 50 && topOb.x+75 > 50)) {
             playerY = 200;
             playerVelocity = 4;
             topOb.x = 500;
             obstacle = rand() % 350;
             points = 0;
+            Mix_HaltChannel(-1);
+            Mix_PlayChannel(-1, soundtrack, -1);
         }
 
         // limit gravity
@@ -194,7 +206,7 @@ int main(int argc, char* argv[]) {
 
         // draw bg lines!!
         int n;
-        for (n = 0; n < 7; n += 2) {
+        for (n = 0; n < amtLines+1; n += 2) {
             linePos[n] -= round(obSpeed/1.5);
             SDL_RenderDrawLine(renderer,linePos[n],linePos[n+1],linePos[n]+30,linePos[n+1]);
             if (linePos[n] < -25) {
@@ -212,7 +224,7 @@ int main(int argc, char* argv[]) {
         SDL_RenderFillRect(renderer,&topOb);
 
         SDL_RenderPresent(renderer);
-
+        
         Uint32 frameTime = SDL_GetTicks() - frameStart;
         if (FRAME_TARGET_TIME > frameTime) {
         SDL_Delay(FRAME_TARGET_TIME - frameTime);
