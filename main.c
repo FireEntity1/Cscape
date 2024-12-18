@@ -60,7 +60,6 @@ void SDL_RenderFillCircle(SDL_Renderer * renderer, int x, int y, int radius) {
     }
 }
 
-
 int main(int argc, char* argv[]) {
     const int DESIRED_FPS = 60;
     const int FRAME_TARGET_TIME = 1000 / DESIRED_FPS;
@@ -99,6 +98,14 @@ int main(int argc, char* argv[]) {
 
     int obstacle = rand() % 100;
 
+    int edgeCol = 255;
+    bool pulseDown = false;
+    int obSpeed = 5;
+
+    int points = 0;
+
+    int linePos[10];
+
     while(gameIsRunning) {
         Uint32 frameStart = SDL_GetTicks();
         
@@ -115,7 +122,7 @@ int main(int argc, char* argv[]) {
                 switch (event.key.keysym.sym) {
                     case SDLK_UP:
                     inputMap[0] = true;
-                    // Mix_PlayChannel(-1, jump, 0);
+                    Mix_PlayChannel(-1, jump, 0);
                     playerVelocity = 30;
                     break;
             }
@@ -128,41 +135,80 @@ int main(int argc, char* argv[]) {
             }
         }
         }
-
+        // handle gravity
         playerVelocity -= 1;
         playerY -= playerVelocity/4;
 
+        // handle speed change
+        obSpeed = round((points+50)/10);
+        
         if (!(0 < playerY && playerY < 400)) {
-            playerY = 200;
-            playerVelocity = 4;
-        }
-        if (topOb.x > -75) {
-            topOb.x -= 5;
-        } else {
-            topOb.x = 400;
-            obstacle = rand() % 350;
-        }
-        topOb.y = obstacle;
-        topOb.w = 75;
-        topOb.h = 75;
-
-        if ((playerY > obstacle && playerY < obstacle+75) && (topOb.x < 50 && topOb.x+75 > 50)) {
             playerY = 200;
             playerVelocity = 4;
             topOb.x = 500;
             obstacle = rand() % 350;
         }
+        if (topOb.x > -75) {
+            topOb.x -= obSpeed;
+        } else {
+            topOb.x = 400;
+            obstacle = rand() % 350;
+            points += 1;
+        }
+        topOb.y = obstacle;
+        topOb.w = 75;
+        topOb.h = 75;
 
+        // reset on hit
+        if ((playerY > obstacle && playerY < obstacle+75) && (topOb.x < 50 && topOb.x+75 > 50)) {
+            playerY = 200;
+            playerVelocity = 4;
+            topOb.x = 500;
+            obstacle = rand() % 350;
+            points = 0;
+        }
 
+        // limit gravity
+        playerVelocity = clamp(playerVelocity, -30,30);
+
+        // draw stuff 
         SDL_SetRenderDrawColor(renderer,0,0,0,SDL_ALPHA_OPAQUE);
         SDL_RenderClear(renderer);
+        
+        // pulsing edges
+        if (edgeCol >= 255) {
+            pulseDown = true;
+        } else if (edgeCol <= 0) {
+            pulseDown = false;
+        }
 
-        SDL_SetRenderDrawColor(renderer,255,80,120,SDL_ALPHA_OPAQUE);
+        if (pulseDown == true) {
+            edgeCol -= 5;
+        } else {
+            edgeCol += 5;
+        }
+
+        SDL_SetRenderDrawColor(renderer,edgeCol-edgeCol/5,edgeCol,edgeCol-(rand()%255),SDL_ALPHA_OPAQUE);
+        SDL_RenderDrawLine(renderer,0,1,400,1);
+        SDL_RenderDrawLine(renderer,0,399,400,399);
+
+        // draw bg lines!!
+        int n;
+        for (n = 0; n < 7; n += 2) {
+            linePos[n] -= round(obSpeed/1.5);
+            SDL_RenderDrawLine(renderer,linePos[n],linePos[n+1],linePos[n]+30,linePos[n+1]);
+            if (linePos[n] < -25) {
+                linePos[n] = 400+rand()%400;
+                linePos[n+1] = rand()%300 +50;
+            }
+        }
+
+        SDL_SetRenderDrawColor(renderer,255,255,255,SDL_ALPHA_OPAQUE);
 
         SDL_RenderFillCircle(renderer,50,playerY,15);
 
         // Draw the obstacle!!
-        SDL_SetRenderDrawColor(renderer,clamp(rand()%255,150,255),clamp(rand()%255,150,255),clamp(rand()%255,150,255),SDL_ALPHA_OPAQUE);
+        SDL_SetRenderDrawColor(renderer,clamp(rand()%255,100,255),clamp(rand()%255,100,255),clamp(rand()%255,100,255),SDL_ALPHA_OPAQUE);
         SDL_RenderFillRect(renderer,&topOb);
 
         SDL_RenderPresent(renderer);
@@ -172,6 +218,7 @@ int main(int argc, char* argv[]) {
         SDL_Delay(FRAME_TARGET_TIME - frameTime);
         }
     }
+
     SDL_DestroyWindow(window);
         
     SDL_Quit();
