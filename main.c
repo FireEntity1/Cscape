@@ -1,12 +1,13 @@
-#include <iostream>
+// #include <iostream>
 
 #include <SDL2/SDL.h> 
 #include <stdio.h>
 #include <stdlib.h>
 #include <SDL_image.h>
 #include <SDL_mixer.h>
+#include <SDL_ttf.h>
 
-// clang++ main.c -I/Library/Frameworks/SDL2.framework/Headers -F/Library/Frameworks -framework SDL2 -I/Library/Frameworks/SDL2_image.framework/Headers  -framework SDL2_image -I/Library/Frameworks/SDL2_mixer.framework/Headers -framework SDL2_mixer -o Cscape
+// clang++ main.c -I/Library/Frameworks/SDL2.framework/Headers -F/Library/Frameworks -framework SDL2 -I/Library/Frameworks/SDL2_image.framework/Headers  -framework SDL2_image -I/Library/Frameworks/SDL2_mixer.framework/Headers -framework SDL2_mixer -I/Library/Frameworks/SDL2_ttf.framework/Headers -framework SDL2_ttf -o Cscape 
 
 int clamp(int x,int min, int max) {
     if (x<min) {
@@ -67,14 +68,17 @@ int main(int argc, char* argv[]) {
     SDL_Window* window=nullptr;
 
     if (SDL_Init(SDL_INIT_VIDEO) < 0){
-        std::cout << "no worky: " <<
+        // std::cout << "no worky :( " <<
                   SDL_GetError();
-    } else{
-        std::cout << "everything works!\n";
-    }
+     } 
+    // else{
+    //     std::cout << "everything works!\n";
+    // }
 
     int playerY = 200;
     int playerVelocity = 0;
+
+    TTF_Init();
 
     SDL_Init(SDL_INIT_AUDIO);
     Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048);
@@ -93,6 +97,7 @@ int main(int argc, char* argv[]) {
 
     Mix_Chunk* jump = Mix_LoadWAV("/assets/jump.mp3");
     Mix_Chunk* soundtrack = Mix_LoadWAV("/assets/soundtrack.wav");
+    Mix_Chunk* start = Mix_LoadWAV("/assets/start.mp3");
 
     SDL_Rect topOb;
     topOb.x = 400;
@@ -103,13 +108,32 @@ int main(int argc, char* argv[]) {
     bool pulseDown = false;
     int obSpeed = 5;
 
+    bool isTitle = true;
+    bool music = false;
+
+    Mix_PlayChannel(-1, start, 0);
+
+    SDL_Surface *game;
+    SDL_Surface *title;
+    title = IMG_Load("/assets/title.png");
+    SDL_Texture* imageTexture = SDL_CreateTextureFromSurface(renderer, title);
+
     int points = 0;
 
+    int n; // for loop friend i love you n
 
-    int amtLines = 50;
-    int linePos[amtLines];
+    int amtLines = 500;
+    int linePos[amtLines*2];
 
-    Mix_PlayChannel(-1, soundtrack, -1);
+    TTF_Font* font = TTF_OpenFont("/assets/silkscreen.ttf", 30);
+    SDL_Rect textLocation = {183,2,100,35}; 
+
+    int bgColour[3] = {0,0,0};
+
+    SDL_Color black = {0,0,0};
+    SDL_Color white = {255,255,255};
+
+    char pointsDisplay[2];
 
     while(gameIsRunning) {
         Uint32 frameStart = SDL_GetTicks();
@@ -128,6 +152,10 @@ int main(int argc, char* argv[]) {
                 switch (event.key.keysym.sym) {
                     case SDLK_UP:
                     inputMap[0] = true;
+                    if (isTitle == true) {
+                        Mix_PlayChannel(-1, soundtrack, -1);
+                    }
+                    isTitle = false;
                     Mix_PlayChannel(-1, jump, 0);
                     playerVelocity = 30;
                     break;
@@ -141,7 +169,10 @@ int main(int argc, char* argv[]) {
             }
         }
         }
+        sprintf(pointsDisplay,"%i",points);
+        SDL_Surface *text = TTF_RenderText_Shaded(font,pointsDisplay, white, black);
 
+        if (isTitle == false) {
         // handle gravity
         playerVelocity -= 1;
         playerY -= playerVelocity/4;
@@ -156,15 +187,17 @@ int main(int argc, char* argv[]) {
             topOb.x = 500;
             obstacle = rand() % 350;
             points = 0;
+            isTitle = true;
             Mix_HaltChannel(-1);
-            Mix_PlayChannel(-1, soundtrack, -1);
         }
+
         if (topOb.x > -75) {
             topOb.x -= obSpeed;
-        } else {
+        } else { 
             topOb.x = 400;
             obstacle = rand() % 350;
             points += 1;
+            bgColour[rand()%3] = 30;
         }
         topOb.y = obstacle;
         topOb.w = 75;
@@ -177,14 +210,14 @@ int main(int argc, char* argv[]) {
             obstacle = rand() % 350;
             points = 0;
             Mix_HaltChannel(-1);
-            Mix_PlayChannel(-1, soundtrack, -1);
+            isTitle = true;
         }
 
         // limit gravity
         playerVelocity = clamp(playerVelocity, -30,30);
-
+        }
         // draw stuff 
-        SDL_SetRenderDrawColor(renderer,0,0,0,SDL_ALPHA_OPAQUE);
+        SDL_SetRenderDrawColor(renderer,bgColour[0],bgColour[1],bgColour[2],SDL_ALPHA_OPAQUE);
         SDL_RenderClear(renderer);
         
         // pulsing edges
@@ -200,12 +233,24 @@ int main(int argc, char* argv[]) {
             edgeCol += 5;
         }
 
+        for (n = 0; n < 3; n++) {
+            if (bgColour[n] > 0) {
+                bgColour[n] -= 5;
+            }
+        }
+
+        if (points < 10) {
+            textLocation.w = 25;
+        } else {
+            textLocation.w = 50;
+            textLocation.x = 175;
+        }
+
         SDL_SetRenderDrawColor(renderer,edgeCol-edgeCol/5,edgeCol,edgeCol-(rand()%255),SDL_ALPHA_OPAQUE);
         SDL_RenderDrawLine(renderer,0,1,400,1);
         SDL_RenderDrawLine(renderer,0,399,400,399);
 
         // draw bg lines!!
-        int n;
         for (n = 0; n < amtLines+1; n += 2) {
             linePos[n] -= round(obSpeed/1.5);
             SDL_RenderDrawLine(renderer,linePos[n],linePos[n+1],linePos[n]+30,linePos[n+1]);
@@ -223,9 +268,14 @@ int main(int argc, char* argv[]) {
         SDL_SetRenderDrawColor(renderer,clamp(rand()%255,100,255),clamp(rand()%255,100,255),clamp(rand()%255,100,255),SDL_ALPHA_OPAQUE);
         SDL_RenderFillRect(renderer,&topOb);
 
+        SDL_RenderCopy(renderer,SDL_CreateTextureFromSurface(renderer,text),NULL,&textLocation);
+
+        if (isTitle == true) {SDL_RenderCopy(renderer,imageTexture,NULL,NULL);}
+
         SDL_RenderPresent(renderer);
         
-        Uint32 frameTime = SDL_GetTicks() - frameStart;
+        Uint32 frameTime = SDL_GetTicks() - frameStart;\
+
         if (FRAME_TARGET_TIME > frameTime) {
         SDL_Delay(FRAME_TARGET_TIME - frameTime);
         }

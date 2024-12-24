@@ -1,5 +1,5 @@
 {
-  "C_Cpp_Runner.cCompilerPath": "clang",
+  "C_Cpp_Runner.cCompilerPath": "clang++",
   "C_Cpp_Runner.cppCompilerPath": "clang++",
   "C_Cpp_Runner.debuggerPath": "lldb",
   "C_Cpp_Runner.cStandard": "",
@@ -42,7 +42,8 @@
   ],
   "C_Cpp_Runner.includeSearch": [
     "*",
-    "**/*"
+    "**/*",
+    "/Library/Frameworks/**"
   ],
   "C_Cpp_Runner.excludeSearch": [
     "**/build",
@@ -61,6 +62,7 @@
   "C_Cpp.errorSquiggles": "disabled",
   "files.associations": {
     "__config": "c",
-    "__nullptr": "c"
+    "__nullptr": "c",
+    "sdl_ttf.h": "c"
   }
 }
