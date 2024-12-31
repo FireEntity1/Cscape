@@ -1,4 +1,4 @@
-A flappy-bird style game where you dodge incoming obstacles!
+A flappy-bird style game developed in Simple Directmedia Layer (SDL) and C where you dodge an infinite series of procedurally generated obstacles!
 
 Press up arrow to jump!
 
