@@ -1,11 +1,11 @@
 // #include <iostream>
 
-#include <SDL2/SDL.h> 
-#include <stdio.h>
-#include <stdlib.h>
-#include <SDL_image.h>
-#include <SDL_mixer.h>
-#include <SDL_ttf.h>
+#include "SDL2/SDL.h" 
+#include "stdio.h"
+#include "stdlib.h"
+#include "SDL_image.h"
+#include "SDL_mixer.h"
+#include "SDL_ttf.h"
 
 // clang++ main.c -I/Library/Frameworks/SDL2.framework/Headers -F/Library/Frameworks -framework SDL2 -I/Library/Frameworks/SDL2_image.framework/Headers  -framework SDL2_image -I/Library/Frameworks/SDL2_mixer.framework/Headers -framework SDL2_mixer -I/Library/Frameworks/SDL2_ttf.framework/Headers -framework SDL2_ttf -o Cscape 
 
@@ -98,6 +98,7 @@ int main(int argc, char* argv[]) {
     Mix_Chunk* jump = Mix_LoadWAV("/assets/jump.mp3");
     Mix_Chunk* soundtrack = Mix_LoadWAV("/assets/soundtrack.wav");
     Mix_Chunk* start = Mix_LoadWAV("/assets/start.mp3");
+    Mix_Chunk* gameOver = Mix_LoadWAV("/assets/gameover.mp3");
 
     SDL_Rect topOb;
     topOb.x = 400;
@@ -189,6 +190,7 @@ int main(int argc, char* argv[]) {
             points = 0;
             isTitle = true;
             Mix_HaltChannel(-1);
+            Mix_PlayChannel(-1, gameOver, 0);
         }
 
         if (topOb.x > -75) {
@@ -210,6 +212,7 @@ int main(int argc, char* argv[]) {
             obstacle = rand() % 350;
             points = 0;
             Mix_HaltChannel(-1);
+            Mix_PlayChannel(-1, gameOver, 0);
             isTitle = true;
         }
 
